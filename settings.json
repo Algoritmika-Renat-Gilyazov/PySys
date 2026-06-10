@@ -1,4 +1,5 @@
 {
     "insider_crash_enabled": true,
+    "vfs_enabled_comment": "Not reccomened to set 'true'. It's under constaruction",
     "vfs_enabled": false
 }
