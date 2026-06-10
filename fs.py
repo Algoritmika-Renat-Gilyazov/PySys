@@ -30,3 +30,17 @@ class Element:
             sc.Err(f"{str(ch.path)} isn't a correct element.")
     def IsExists(self):
         return self.path.exists()
+    def IsSubpathOf(self, base_path: Path) -> bool:
+        """
+        Проверяет, находится ли текущий путь внутри base_path.
+        Защищает от выхода через '..'
+        """
+        try:
+            # Получаем абсолютные пути без символических ссылок и ".."
+            resolved_base = base_path.resolve()
+            resolved_self = (base_path / self.path).resolve()
+        
+            # Проверяем, является ли base_path предком для resolved_self
+            return resolved_base in resolved_self.parents or resolved_base == resolved_self
+        except Exception:
+            return False
