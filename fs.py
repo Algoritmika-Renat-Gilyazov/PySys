@@ -6,14 +6,16 @@ import sc64 as sc
 class Element:
     path: Path
     owner: str = "*"
-    def IsFolder(self):
-        if (self.path.exists() and self.path.is_dir()) or str(self.path)[-1] == "/":
-            return True
-        return False
-    def IsFile(self):
-        if (self.path.exists() and self.path.is_file()) or str(self.path)[-1] != "/":
-            return True
-        return False
+    def IsFolder(self, base_path: Path = None):
+        if base_path:
+            real_path = (base_path / str(self.path).lstrip("/")).resolve()
+            return real_path.is_dir()
+        return str(self.path).endswith("/") or self.path.suffix == ""
+    def IsFile(self, base_path: Path = None):
+        if base_path:
+            real_path = (base_path / str(self.path).lstrip("/")).resolve()
+            return real_path.is_file()
+        return not self.IsFolder() and not self.IsLink()
     def IsLink(self):
         if "://" in str(self.path):
             return True
@@ -28,19 +30,15 @@ class Element:
             path.path.mkdir(parents=True, exist_ok=True)
         else:
             sc.Err(f"{str(ch.path)} isn't a correct element.")
-    def IsExists(self):
+    def IsExists(self, base_path: Path = None) -> bool:
+        if base_path:
+            return (base_path / str(self.path).lstrip("/")).resolve().exists()
         return self.path.exists()
     def IsSubpathOf(self, base_path: Path) -> bool:
-        """
-        Проверяет, находится ли текущий путь внутри base_path.
-        Защищает от выхода через '..'
-        """
         try:
-            # Получаем абсолютные пути без символических ссылок и ".."
             resolved_base = base_path.resolve()
             resolved_self = (base_path / self.path).resolve()
         
-            # Проверяем, является ли base_path предком для resolved_self
             return resolved_base in resolved_self.parents or resolved_base == resolved_self
         except Exception:
             return False

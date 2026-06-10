@@ -16,43 +16,44 @@ class Terminal:
     def __init__(self, cwd=None):
         self.root_dir = Path(__file__).parent.resolve()
         
-        if cwd is None:
-            self.cwd = fs.Element(Path("/"))
-        else:
-            self.cwd = cwd
-            
+        self.cwd = cwd if cwd else fs.Element(Path("/"))
+        
         self.real_cwd = self.root_dir
+        
         self.inp = ""
         self.inp0 = []
         self.command = ""
         self.args = []
-    def Start(self):
-        with Pool(processes=2) as p:
-            self.MainCycle()
         
+        self.UpdateRealCwd()
+
     def UpdateRealCwd(self):
-        self.real_cwd = (self.root_dir / self.cwd.path.relative_to("/")).resolve()
+        virtual_str = str(self.cwd.path).lstrip("/")
+        self.real_cwd = (self.root_dir / virtual_str).resolve()
 
     def ChangeDirectory(self, target_str: str):
-        """Safe directory change"""
-        target_path = Path(target_str)
-        
-        if target_str.startswith("/"):
-            new_relative = Path(target_str.lstrip("/"))
+        self.cwd = fs.Element(target_str)
+        # Verification underconstruction
+        return
+        try:
+            target = Path(target_str).resolve()
+        except:
+            print(f"{TEXT_RED}Directory '{target_str}' doesn't exists.{RESET}")
+            return
+        print(f"[DEBUG] target: {target.as_posix()}")
+        root = Path(__file__).parent
+        print(f"[DEBUG] Parents: {target.parents}")
+        if root in target.parents or target == root:
+            self.cwd = fs.Element(target.resolve().relative_to(self.cwd.path))
+            self.UpdateRealCwd()
         else:
-            new_relative = self.cwd.path / target_path
+            print(f"{TEXT_RED}Access denied.{RESET}")
 
-        potential_real_path = (self.root_dir / new_relative).resolve()
-        
-        if self.root_dir in potential_real_path.parents or self.root_dir == potential_real_path:
-            if potential_real_path.is_dir():
-                virtual_relative = potential_real_path.relative_to(self.root_dir)
-                self.cwd = fs.Element(Path("/") / virtual_relative)
-                self.UpdateRealCwd()
-            else:
-                print(f"{TEXT_RED}Error: directory not found.{RESET}")
-        else:
-            print(f"{TEXT_RED}Access denied by virtual filesystem contoller.{RESET}")
+    def Start(self):
+        print(f"PySys {version.get('name', 'Unknown')}.\nCopyleft.")
+        print("\n")
+        with Pool(processes=2) as pool:
+            res = self.MainCycle()
 
     def MainCycle(self):
         while running():
@@ -83,16 +84,14 @@ class Terminal:
                     self.Help()
                 case "echo":
                     print(*self.args)
-                case "exit":
-                    print(f"{TEXT_RED}Unknown command: '{self.command}'.{TEXT_MAGENTA_G}Do you mean 'shutdown' for exit form console?")
-                    self.Help()
                 case _:
-                    print(f"{TEXT_RED}Unknown command: '{self.command}'.{RESET}")
+                    print(f"{TEXT_RED}Unknown command: '{self.command}'.{RESET}\n")
                     self.Help()
             print()
+
     def Help(self):
-        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.")
-        print(RESET, end="")
+        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}cd [путь]:{TEXT_GREEN} Сменить директорию.\n{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.")
+        print(RESET)
 
 def Start():
     term = Terminal()
