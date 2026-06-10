@@ -1,6 +1,7 @@
 import sc64
 import time
 from pathlib import Path
+from traceback import format_exc
 
 if __name__ != "__main__":
     quit(1)
@@ -12,5 +13,5 @@ try:
     import krnl
     import sys
     krnl.Start(*sys.argv)
-except Exception as e:
-    sc64.Crash(e)
+except Exception:
+    sc64.Crash(format_exc())

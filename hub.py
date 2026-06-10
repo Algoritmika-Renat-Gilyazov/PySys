@@ -8,7 +8,13 @@ from ansi import *
 version: dict = {}
 with open((Path(__file__).parent / "version.json").as_posix(), "r") as f:
     version = json.load(f)
-    
+
+settings: dict = {}
+with open((Path(__file__).parent / "settings.json").as_posix(), "r") as f:
+    settings = json.load(f)
+
+vfs: bool = settings.get("vfs_enabled", False)
+
 def running():
     return (Path(__file__).parent / "main").exists()
 
@@ -16,7 +22,10 @@ class Terminal:
     def __init__(self, cwd=None):
         self.root_dir = Path(__file__).parent.resolve()
         
-        self.cwd = cwd if cwd else fs.Element(Path("/"))
+        if vfs:
+            self.cwd: fs.Element = cwd if cwd else fs.Element(Path("/"))
+        else:
+            self.cwd: Path = cwd if cwd else self.root_dir
         
         self.real_cwd = self.root_dir
         
@@ -28,12 +37,26 @@ class Terminal:
         self.UpdateRealCwd()
 
     def UpdateRealCwd(self):
+        if not vfs:
+            self.real_cwd = self.cwd.resolve()
+            return
         virtual_str = str(self.cwd.path).lstrip("/")
         self.real_cwd = (self.root_dir / virtual_str).resolve()
 
     def ChangeDirectory(self, target_str: str):
+        if not vfs:
+            try:
+                if (self.cwd / target_str).resolve().is_dir():
+                    self.cwd = (self.cwd / target_str).resolve()
+                else:
+                    print(f"{TEXT_RED}'{(self.cwd / target_str).as_posix()}' not a directory.{RESET}")
+                    return
+            except:
+                print(f"{TEXT_RED}'{(self.cwd / target_str).as_posix()}' not found.{RESET}")
+            return
+                
         self.cwd = fs.Element(target_str)
-        # Verification underconstruction
+        # VFS verification under construction
         return
         try:
             target = Path(target_str).resolve()
@@ -57,7 +80,10 @@ class Terminal:
 
     def MainCycle(self):
         while running():
-            self.inp = input(f"{str(self.cwd.path)}> ")
+            if vfs:
+                self.inp = input(f"{self.cwd.path.as_posix()}> ")
+            else:
+                self.inp = input(f"{self.cwd.as_posix()}> ")
             self.inp0 = self.inp.split()
             try:
                 self.command = self.inp0[0]
@@ -75,7 +101,7 @@ class Terminal:
                     if self.args:
                         self.ChangeDirectory(self.args[0])
                     else:
-                        self.ChangeDirectory("/")
+                        print(f"{TEXT_RED}Expected 1 argument, but given 0.{RESET}")
                 case "shutdown":
                     (Path(__file__).parent / "main").unlink(True)
                 case "crash":
@@ -90,7 +116,7 @@ class Terminal:
             print()
 
     def Help(self):
-        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}cd [путь]:{TEXT_GREEN} Сменить директорию.\n{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.")
+        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.")
         print(RESET)
 
 def Start():

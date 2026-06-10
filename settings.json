@@ -1,3 +1,4 @@
 {
-    "insider_crash_enabled": true
+    "insider_crash_enabled": true,
+    "vfs_enabled": false
 }
