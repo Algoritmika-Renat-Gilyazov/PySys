@@ -4,6 +4,7 @@ import fs
 from pathlib import Path
 import sc64
 from ansi import *
+import shutil
 
 version: dict = {}
 with open((Path(__file__).parent / "version.json").as_posix(), "r") as f:
@@ -110,13 +111,45 @@ class Terminal:
                     self.Help()
                 case "echo":
                     print(*self.args)
+                case "mkdir":
+                    if len(self.args) < 1:
+                        print(f"{TEXT_RED}Expected 1 argument, but given 0.{RESET}")
+                    if not vfs:
+                        path = Path(self.args[0]).relative_to(self.cwd)
+                    else:
+                        path = Path(self.args[0]).relative_to(self.real_cwd)
+                    path.mkdir(parents=True, exist_ok=True)
+                case "rmdir":
+                    if len(self.args) < 1:
+                        print(f"{TEXT_RED}Expected 1 argument, but given 0.{RESET}")
+                    if not vfs:
+                        path = Path(self.args[0]).relative_to(self.cwd)
+                    else:
+                        path = Path(self.args[0]).relative_to(self.real_cwd)
+                    shutil.rmtree(path.as_posix(), ignore_errors=True)
+                case "touch":
+                    if len(self.args) < 1:
+                        print(f"{TEXT_RED}Expected 1 argument, but given 0.{RESET}")
+                    if not vfs:
+                        path = Path(self.args[0]).relative_to(self.cwd)
+                    else:
+                        path = Path(self.args[0]).relative_to(self.real_cwd)
+                    path.touch(parents=True, exist_ok=True)
+                case "rm":
+                    if len(self.args) < 1:
+                        print(f"{TEXT_RED}Expected 1 argument, but given 0.{RESET}")
+                    if not vfs:
+                        path = Path(self.args[0]).relative_to(self.cwd)
+                    else:
+                        path = Path(self.args[0]).relative_to(self.real_cwd)
+                    path.unlink(missing_ok=True)
                 case _:
                     print(f"{TEXT_RED}Unknown command: '{self.command}'.{RESET}\n")
                     self.Help()
             print()
 
     def Help(self):
-        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.")
+        print(f"{BOLD}{TEXT_MAGENTA_G}Help:\n{RESET}{TEXT_YELLOW_G}shutdown:{TEXT_GREEN} Exit from console and shutdown.\n{TEXT_YELLOW_G}crash:{TEXT_GREEN} Crash manually.\n{TEXT_YELLOW_G}help:{TEXT_GREEN} Show this message.\n{TEXT_YELLOW_G}echo:{TEXT_GREEN} Print the text.\n{TEXT_YELLOW_G}cd:{TEXT_GREEN} Change directory.\n{TEXT_YELLOW_G}mkdir:{TEXT_GREEN} Create a directory.\n{TEXT_YELLOW_G}rmdir:{TEXT_GREEN} Remove a directory.\n{TEXT_YELLOW_G}touch:{TEXT_GREEN} Create a file.\n{TEXT_YELLOW_G}rm:{TEXT_GREEN} Remove a file.")
         print(RESET)
 
 def Start():

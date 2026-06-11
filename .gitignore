@@ -1,2 +1,4 @@
 __pycache__/
 *.log
+install.py
+setuptools.py
